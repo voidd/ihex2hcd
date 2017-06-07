@@ -29,4 +29,12 @@ func main() {
 
 	b := ihex2hcd.New(inFile)
 	b.BinOutput(outFile)
+	// or
+	a := b.RecordOutput()
+	for _, r := range a {
+		fmt.Println(r.Data)
+	}
+	// or
+	b.StringOutput()
+	outFile.Close()
 }
