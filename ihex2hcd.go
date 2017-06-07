@@ -2,10 +2,10 @@ package ihex2hcd
 
 import (
 	"fmt"
-	"os"
 	"bytes"
 	"io"
 	"bufio"
+	"log"
 )
 
 type RecordType int8
@@ -91,8 +91,7 @@ func (r *Record) toString() {
 			upperAddr <<= 16 // ELA is bits 16-31 of the segment base address (SBA), so shift left 16 bits
 			fmt.Printf("[Extended Linear Address record:%04X ]\n", upperAddr)
 		} else {
-			fmt.Println("Invalid Extended Linear Address record")
-			os.Exit(1)
+			log.Fatalf("Extended Linear Address record: %s", r.Data)
 		}
 
 	case RecordTypeExtendedSegmentAddress:
@@ -102,8 +101,7 @@ func (r *Record) toString() {
 			fmt.Printf("[Extended Segment Address record:%04X ]\n", upperAddr)
 
 		} else {
-			fmt.Println("Invalid Extended Segment Address record ")
-			os.Exit(1)
+			log.Fatalf("Invalid Extended Segment Address record: %s", r.Data)
 		}
 
 	case RecordTypeStartLinearAddress:
@@ -115,8 +113,7 @@ func (r *Record) toString() {
 				fmt.Printf("[Start Linear Addressrecord:%04X ]\n", startAddr)
 			}
 		} else {
-			fmt.Println("Invalid Start Linear Address record")
-			os.Exit(1)
+			log.Fatalf("Invalid Start Linear Address record: %s", r.Data)
 		}
 
 	case RecordTypeStartSegmentAddress:
@@ -128,8 +125,7 @@ func (r *Record) toString() {
 				fmt.Printf("[Start Segment Address :%04X ]\n", startAddr)
 			}
 		} else {
-			fmt.Println("Invalid Start Segment Address record")
-			os.Exit(1)
+			log.Fatalf("Invalid Start Segment Address record: %s", r.Data)
 		}
 	default:
 		fmt.Printf(string(r.Data))
@@ -151,8 +147,7 @@ func (r *Record) processRecord() []byte {
 			upperAddr = int64(((r.Data[0] & 0xFF) << 8) + (r.Data[1] & 0xFF))
 			upperAddr <<= 16 // ELA is bits 16-31 of the segment base address (SBA), so shift left 16 bits
 		} else {
-			fmt.Println("Invalid Extended Linear Address record")
-			os.Exit(1)
+			log.Fatalf("Extended Linear Address record: %s", r.Data)
 		}
 
 	case RecordTypeExtendedSegmentAddress:
@@ -160,8 +155,7 @@ func (r *Record) processRecord() []byte {
 			upperAddr = int64(((r.Data[0] & 0xFF) << 8) + (r.Data[1] & 0xFF))
 			upperAddr <<= 4 // ESA is bits 4-19 of the segment base address (SBA), so shift left 4 bits
 		} else {
-			fmt.Println("Invalid Extended Segment Address record")
-			os.Exit(1)
+			log.Fatalf("Invalid Extended Segment Address record: %s", r.Data)
 		}
 
 	case RecordTypeStartLinearAddress:
@@ -172,8 +166,7 @@ func (r *Record) processRecord() []byte {
 				startAddr |= int64(r.Data[i] & 0xFF)
 			}
 		} else {
-			fmt.Println("Invalid Start Linear Address record")
-			os.Exit(1)
+			log.Fatalf("Invalid Start Linear Address record: %s", r.Data)
 		}
 
 	case RecordTypeStartSegmentAddress:
@@ -184,8 +177,7 @@ func (r *Record) processRecord() []byte {
 				startAddr |= int64(r.Data[i] & 0xFF)
 			}
 		} else {
-			fmt.Println("Invalid Start Segment Address record")
-			os.Exit(1)
+			log.Fatalf("Invalid Start Segment Address record: %s", r.Data)
 		}
 	}
 	return nil

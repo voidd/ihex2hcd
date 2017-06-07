@@ -1,9 +1,8 @@
-package hex2hcd
+package ihex2hcd
 
 import (
-	"fmt"
 	"encoding/hex"
-	"os"
+	"log"
 )
 
 type Parser struct {
@@ -34,23 +33,19 @@ func (p *Parser) Parse() *Record {
 func (p *Parser) checkInputString() {
 	if !p.checkMarker() {
 		p.throwError("Invalid start of Intel HEX record! Expected \":\" got: %q", p.input[0])
-		os.Exit(1)
 	}
 
 	if !p.allowedChars([]byte("0123456789ABCDEF"), p.input[1:]) {
 		p.throwError("Not allowed characters in Intel HEX record! Expected not 0123456789ABCDEF got: %s", p.input)
-		os.Exit(1)
 	}
 
 	if len(p.input) < 11 {
 		p.throwError("Invalid length of Intel HEX record! Expected not less than 11 got: %q", len(p.input))
-		os.Exit(1)
 	}
 
 	checksum := p.generateCheckSum()
 	if p.getCheckSum() != checksum {
 		p.throwError("Invalid Intel HEX record checksum! Expected %s got: %s", p.getCheckSum(), checksum)
-		os.Exit(1)
 	}
 }
 
@@ -69,7 +64,7 @@ func (p *Parser) generateCheckSum() (sum byte) {
 }
 
 func (p *Parser) throwError(format string, args ...interface{}) {
-	fmt.Sprintf(format, args...)
+	log.Fatalf(format, args...)
 }
 
 func (p *Parser) checkMarker() bool {

@@ -36,5 +36,4 @@ func main() {
 	}
 	// or
 	b.StringOutput()
-	outFile.Close()
 }
