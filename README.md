@@ -29,5 +29,4 @@ func main() {
 
 	b := ihex2hcd.New(inFile)
 	b.BinOutput(outFile)
-	outFile.Close()
 }
