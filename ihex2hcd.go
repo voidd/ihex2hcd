@@ -58,6 +58,84 @@ func (h *Hex2Bin) BinOutput(writer io.Writer) {
 	}
 }
 
+func (h *Hex2Bin) StringOutput() {
+	var records []*Record
+	scanner := bufio.NewScanner(h.r)
+	for scanner.Scan() {
+		records = append(records, ParseString(scanner.Text()))
+	}
+	for _, r := range records {
+		r.toString()
+	}
+}
+
+func (h *Hex2Bin) RecordOutput() []*Record {
+	scanner := bufio.NewScanner(h.r)
+	for scanner.Scan() {
+		h.records = append(h.records, ParseString(scanner.Text()))
+	}
+	return h.records
+}
+
+func (r *Record) toString() {
+	switch r.Type {
+	case RecordTypeData:
+		fmt.Printf("[Address:%04X ByteCount:%d Data:%04X ]\n", r.Address, r.ByteCount, r.Data)
+
+	case RecordTypeEOF:
+		fmt.Sprint("EOF")
+
+	case RecordTypeExtendedLinearAddress:
+		if r.ByteCount == 2 {
+			upperAddr = int64(((r.Data[0] & 0xFF) << 8) + (r.Data[1] & 0xFF))
+			upperAddr <<= 16 // ELA is bits 16-31 of the segment base address (SBA), so shift left 16 bits
+			fmt.Printf("[Extended Linear Address record:%04X ]\n", upperAddr)
+		} else {
+			fmt.Println("Invalid Extended Linear Address record")
+			os.Exit(1)
+		}
+
+	case RecordTypeExtendedSegmentAddress:
+		if r.ByteCount == 2 {
+			upperAddr = int64(((r.Data[0] & 0xFF) << 8) + (r.Data[1] & 0xFF))
+			upperAddr <<= 4 // ESA is bits 4-19 of the segment base address (SBA), so shift left 4 bits
+			fmt.Printf("[Extended Segment Address record:%04X ]\n", upperAddr)
+
+		} else {
+			fmt.Println("Invalid Extended Segment Address record ")
+			os.Exit(1)
+		}
+
+	case RecordTypeStartLinearAddress:
+		if r.ByteCount == 4 {
+			startAddr = 0
+			for i := range r.Data {
+				startAddr = startAddr << 8
+				startAddr |= int64(r.Data[i] & 0xFF)
+				fmt.Printf("[Start Linear Addressrecord:%04X ]\n", startAddr)
+			}
+		} else {
+			fmt.Println("Invalid Start Linear Address record")
+			os.Exit(1)
+		}
+
+	case RecordTypeStartSegmentAddress:
+		if r.ByteCount == 4 {
+			startAddr = 0
+			for i := range r.Data {
+				startAddr = startAddr << 8
+				startAddr |= int64(r.Data[i] & 0xFF)
+				fmt.Printf("[Start Segment Address :%04X ]\n", startAddr)
+			}
+		} else {
+			fmt.Println("Invalid Start Segment Address record")
+			os.Exit(1)
+		}
+	default:
+		fmt.Printf(string(r.Data))
+	}
+}
+
 func (r *Record) processRecord() []byte {
 	addr := r.Address | upperAddr
 
