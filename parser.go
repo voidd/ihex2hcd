@@ -2,8 +2,13 @@ package ihex2hcd
 
 import (
 	"encoding/hex"
-	"log"
+	"fmt"
 )
+
+type parseError struct {
+	reason string
+	symbol interface{}
+}
 
 type Parser struct {
 	input   []byte
@@ -12,41 +17,45 @@ type Parser struct {
 	rec *Record
 }
 
-func (p *Parser) Parse() *Record {
+func (p *Parser) Parse() (*Record, error) {
 	p.rec = new(Record)
 	c, err := hex.DecodeString(string(p.input[1:]))
 	if err != nil {
-		p.throwError("encoding/hex: invalid byte")
+		return nil, err
 	}
 	p.decodedBytes = c
 
-	p.checkInputString()
+	err = p.checkInputString()
+	if err != nil {
+		return nil, err
+	}
 
 	p.rec.ByteCount = p.getByteCount()
 	p.rec.Address = p.getAddress()
 	p.rec.Type = RecordType(p.getType())
 	p.rec.Data = p.getData()
 
-	return p.rec
+	return p.rec, err
 }
 
-func (p *Parser) checkInputString() {
+func (p *Parser) checkInputString() error {
 	if !p.checkMarker() {
-		p.throwError("Invalid start of Intel HEX record! Expected \":\" got: %q", p.input[0])
+		return &parseError{"Invalid start of Intel HEX record! Expected \":\" got: %q", p.input[0]}
 	}
 
 	if !p.allowedChars([]byte("0123456789ABCDEF"), p.input[1:]) {
-		p.throwError("Not allowed characters in Intel HEX record! Expected not 0123456789ABCDEF got: %s", p.input)
+		return &parseError{"Not allowed characters in Intel HEX record! Expected not 0123456789ABCDEF got: %s", p.input}
 	}
 
 	if len(p.input) < 11 {
-		p.throwError("Invalid length of Intel HEX record! Expected not less than 11 got: %q", len(p.input))
+		return &parseError{"Invalid length of Intel HEX record! Expected not less than 11 got: %q", len(p.input)}
 	}
 
 	checksum := p.generateCheckSum()
 	if p.getCheckSum() != checksum {
-		p.throwError("Invalid Intel HEX record checksum! Expected %s got: %s", p.getCheckSum(), checksum)
+		return &parseError{"Invalid Intel HEX record checksum! Checksum: %s", checksum}
 	}
+	return nil
 }
 
 func (p *Parser) getCheckSum() byte {
@@ -63,8 +72,8 @@ func (p *Parser) generateCheckSum() (sum byte) {
 	return (^sum) + 1
 }
 
-func (p *Parser) throwError(format string, args ...interface{}) {
-	log.Fatalf(format, args...)
+func (e *parseError) Error() string {
+	return fmt.Sprintf(e.reason, e.symbol)
 }
 
 func (p *Parser) checkMarker() bool {

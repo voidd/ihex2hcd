@@ -36,10 +36,10 @@ type Record struct {
 	UpperAddr int64
 }
 
-func ParseString(input string) *Record {
+func ParseString(input string) (*Record, error){
 	p := &Parser{input: []byte(input), current: -1}
-	p.Parse()
-	return p.rec
+	r, err := p.Parse()
+	return r, err
 }
 
 func New(r io.Reader) Hex2Bin {
@@ -48,33 +48,47 @@ func New(r io.Reader) Hex2Bin {
 	return h
 }
 
-func (h *Hex2Bin) BinOutput(writer io.Writer) {
+func (h *Hex2Bin) BinOutput(writer io.Writer) error {
 	scanner := bufio.NewScanner(h.r)
 	for scanner.Scan() {
-		h.records = append(h.records, ParseString(scanner.Text()))
+		r, err := ParseString(scanner.Text())
+		if err != nil {
+			return err
+		}
+		h.records = append(h.records, r)
 	}
 	for _, r := range h.records {
 		writer.Write(r.processRecord())
 	}
+	return nil
 }
 
-func (h *Hex2Bin) StringOutput() {
+func (h *Hex2Bin) StringOutput() error {
 	var records []*Record
 	scanner := bufio.NewScanner(h.r)
 	for scanner.Scan() {
-		records = append(records, ParseString(scanner.Text()))
+		r, err := ParseString(scanner.Text())
+		if err != nil {
+			return err
+		}
+		records = append(records, r)
 	}
 	for _, r := range records {
 		r.toString()
 	}
+	return nil
 }
 
-func (h *Hex2Bin) RecordOutput() []*Record {
+func (h *Hex2Bin) RecordOutput() ([]*Record, error) {
 	scanner := bufio.NewScanner(h.r)
 	for scanner.Scan() {
-		h.records = append(h.records, ParseString(scanner.Text()))
+		r, err := ParseString(scanner.Text())
+		if err != nil {
+			return nil, err
+		}
+		h.records = append(h.records, r)
 	}
-	return h.records
+	return h.records, nil
 }
 
 func (r *Record) toString() {
