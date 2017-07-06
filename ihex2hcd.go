@@ -30,7 +30,7 @@ type Hex2Bin struct {
 
 type Record struct {
 	ByteCount int
-	Address   int64
+	Address   []byte
 	Type      RecordType
 	Data      []byte
 	UpperAddr int64
@@ -147,11 +147,12 @@ func (r *Record) toString() {
 }
 
 func (r *Record) processRecord() []byte {
-	addr := r.Address | upperAddr
+	addr := int64(((r.Address[0] & 0xFF) << 8) + (r.Address[1] & 0xFF))
+	offset := addr | upperAddr
 
 	switch r.Type {
 	case RecordTypeData:
-		return writeData(addr, r.Address, r.Data)
+		return writeData(offset, r.Address, r.Data, r.ByteCount)
 
 	case RecordTypeEOF:
 		return []byte{0x4E, 0xFC, 0x04, 0xFF, 0xFF, 0xFF, 0xFF}
@@ -196,8 +197,8 @@ func (r *Record) processRecord() []byte {
 	}
 	return nil
 }
-func writeData(offset int64, addr int64, data []byte) []byte {
-	buf := []byte{0x4c, 0xfc, byte(addr), byte(offset), byte(offset >> 8), byte(offset >> 16), byte(offset >> 24)}
+func writeData(offset int64, addr []byte, data []byte, count int) []byte {
+	buf := []byte{0x4c, 0xfc, byte(count + 4), byte(offset), addr[0], byte(offset >> 16), byte(offset >> 24)}
 	nb := append(buf[:], data[:]...)
 	return nb
 }

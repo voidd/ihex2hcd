@@ -78,10 +78,10 @@ func (e *parseError) Error() string {
 
 func (p *Parser) checkMarker() bool {
 	if p.input[0] == byte(':') {
-			return true
-		} else {
-			return false
-		}
+		return true
+	} else {
+		return false
+	}
 	return false
 }
 
@@ -93,15 +93,14 @@ func (p *Parser) getByteCount() (count int) {
 
 }
 
-func (p *Parser) getAddress() (addr int64) {
+func (p *Parser) getAddress() (addr []byte) {
 	b := make([]byte, 0 , 2)
 	for i := 0; i < 2 ; i++ {
 		if p.Next() {
 			b = append(b,p.Value())
 		}
 	}
-	addr = int64(((b[0] & 0xFF) << 8) + (b[1] & 0xFF))
-	return
+	return b
 }
 
 func (p *Parser) getType() (rtype int8) {
@@ -148,6 +147,3 @@ func (p *Parser) Next() bool {
 func (p *Parser) Value() byte {
 	return p.decodedBytes[p.current]
 }
-
-
-
